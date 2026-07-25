@@ -5,8 +5,26 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { parseTaxiForm, validatePhoto, type FieldErrors } from "@/lib/validation";
+import { logAudit } from "@/lib/audit";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const BUCKET = "taxi-photos";
+
+/** Guards against a runaway script/misbehaving client, not normal admin use. */
+const WRITE_LIMIT = { limit: 30, windowMs: 60 * 1000 };
+
+function assertNotRateLimited(email: string) {
+  const result = checkRateLimit(`admin-write:${email}`, WRITE_LIMIT);
+  if (!result.allowed) {
+    throw new Error("Çok fazla işlem yapıldı. Biraz sonra tekrar deneyin.");
+  }
+}
+
+function idsFrom(formData: FormData): string[] {
+  return formData
+    .getAll("ids")
+    .filter((v): v is string => typeof v === "string" && v.length > 0);
+}
 
 export type FormState = {
   error?: string;
@@ -64,7 +82,8 @@ export async function createTaxi(
   _prev: FormState,
   form: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
+  const user = await requireAdmin();
+  assertNotRateLimited(user.email ?? user.id);
 
   const parsed = parseTaxiForm(form);
   if (!parsed.data) return { fieldErrors: parsed.fieldErrors };
@@ -73,14 +92,21 @@ export async function createTaxi(
   if (photo.error) return { error: photo.error };
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: inserted, error } = await supabase
     .from("taxis")
-    .insert({ ...parsed.data, photo_url: photo.url ?? null });
+    .insert({ ...parsed.data, photo_url: photo.url ?? null })
+    .select("id")
+    .single();
 
   if (error) {
     await removePhoto(photo.url ?? null);
     return { error: "Taksi kaydedilemedi. Tekrar deneyin." };
   }
+
+  await logAudit(user.email ?? user.id, "create_taxi", {
+    taxiId: inserted.id as string,
+    meta: { name: parsed.data.name },
+  });
 
   revalidateTaxi();
   redirect("/admin");
@@ -90,7 +116,8 @@ export async function updateTaxi(
   _prev: FormState,
   form: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
+  const user = await requireAdmin();
+  assertNotRateLimited(user.email ?? user.id);
 
   const id = form.get("id");
   if (typeof id !== "string" || !id) return { error: "Geçersiz kayıt." };
@@ -126,12 +153,15 @@ export async function updateTaxi(
     await removePhoto((existing?.photo_url as string | null) ?? null);
   }
 
+  await logAudit(user.email ?? user.id, "update_taxi", { taxiId: id });
+
   revalidateTaxi(id);
   redirect("/admin");
 }
 
 export async function toggleTaxiActive(id: string, active: boolean) {
-  await requireAdmin();
+  const user = await requireAdmin();
+  assertNotRateLimited(user.email ?? user.id);
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -140,11 +170,17 @@ export async function toggleTaxiActive(id: string, active: boolean) {
     .eq("id", id);
 
   if (error) throw new Error("Durum güncellenemedi.");
+
+  await logAudit(user.email ?? user.id, active ? "activate_taxi" : "deactivate_taxi", {
+    taxiId: id,
+  });
+
   revalidateTaxi(id);
 }
 
 export async function deleteTaxi(id: string) {
-  await requireAdmin();
+  const user = await requireAdmin();
+  assertNotRateLimited(user.email ?? user.id);
 
   const supabase = await createClient();
   const { data: existing } = await supabase
@@ -157,5 +193,53 @@ export async function deleteTaxi(id: string) {
   if (error) throw new Error("Taksi silinemedi.");
 
   await removePhoto((existing?.photo_url as string | null) ?? null);
+  await logAudit(user.email ?? user.id, "delete_taxi", { taxiId: id });
   revalidateTaxi(id);
+}
+
+export async function bulkSetActive(active: boolean, formData: FormData) {
+  const user = await requireAdmin();
+  assertNotRateLimited(user.email ?? user.id);
+
+  const ids = idsFrom(formData);
+  if (ids.length === 0) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("taxis")
+    .update({ active })
+    .in("id", ids);
+
+  if (error) throw new Error("Toplu güncelleme başarısız.");
+
+  await logAudit(user.email ?? user.id, active ? "bulk_activate" : "bulk_deactivate", {
+    meta: { ids },
+  });
+
+  for (const id of ids) revalidateTaxi(id);
+  revalidateTaxi();
+}
+
+export async function bulkDelete(formData: FormData) {
+  const user = await requireAdmin();
+  assertNotRateLimited(user.email ?? user.id);
+
+  const ids = idsFrom(formData);
+  if (ids.length === 0) return;
+
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("taxis")
+    .select("id, photo_url")
+    .in("id", ids);
+
+  const { error } = await supabase.from("taxis").delete().in("id", ids);
+  if (error) throw new Error("Toplu silme başarısız.");
+
+  for (const row of existing ?? []) {
+    await removePhoto((row.photo_url as string | null) ?? null);
+  }
+
+  await logAudit(user.email ?? user.id, "bulk_delete", { meta: { ids } });
+  revalidateTaxi();
 }

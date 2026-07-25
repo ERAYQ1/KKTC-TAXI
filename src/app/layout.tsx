@@ -3,6 +3,7 @@ import { Lexend, Source_Sans_3 } from "next/font/google";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { getLang } from "@/lib/get-lang";
 import "./globals.css";
 
 const fontDisplay = Lexend({
@@ -38,14 +39,16 @@ export const metadata: Metadata = {
   formatDetection: { telephone: true },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const lang = await getLang();
+
   return (
     <html
-      lang="tr"
+      lang={lang}
       className={`${fontDisplay.variable} ${fontBody.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">

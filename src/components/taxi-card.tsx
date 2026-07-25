@@ -1,10 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ContactButtons } from "@/components/contact-buttons";
+import { FavoriteButton } from "@/components/favorite-button";
 import { CarIcon, ClockIcon, MapPinIcon, StarIcon } from "@/components/icons";
 import { regionLabel, type Taxi } from "@/lib/taxi";
+import { t } from "@/lib/i18n";
+import { getLang } from "@/lib/get-lang";
 
-export function TaxiCard({ taxi, index }: { taxi: Taxi; index: number }) {
+export async function TaxiCard({ taxi, index }: { taxi: Taxi; index: number }) {
+  const lang = await getLang();
+
   return (
     <article className="group flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-sm transition-shadow hover:shadow-md">
       <div className="relative aspect-16/10 bg-brand-soft">
@@ -26,18 +31,25 @@ export function TaxiCard({ taxi, index }: { taxi: Taxi; index: number }) {
           </div>
         )}
 
+        <FavoriteButton
+          taxiId={taxi.id}
+          addLabel={t(lang, "favoriteAdd")}
+          removeLabel={t(lang, "favoriteRemove")}
+          className="absolute top-2 right-2 flex size-8 items-center justify-center rounded-full bg-surface/90 shadow-sm backdrop-blur transition-transform hover:scale-105"
+        />
+
         {(taxi.featured || taxi.is_24_7) && (
           <ul className="absolute top-2 left-2 flex flex-wrap gap-1">
             {taxi.featured && (
               <li className="inline-flex items-center gap-1 rounded-full bg-brand-strong px-2 py-1 text-xs font-semibold text-white">
                 <StarIcon className="size-3" />
-                Öne çıkan
+                {t(lang, "featuredBadge")}
               </li>
             )}
             {taxi.is_24_7 && (
               <li className="inline-flex items-center gap-1 rounded-full bg-foreground/85 px-2 py-1 text-xs font-semibold text-background">
                 <ClockIcon className="size-3" />
-                7/24
+                {t(lang, "filter24_7")}
               </li>
             )}
           </ul>

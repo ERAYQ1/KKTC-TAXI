@@ -6,14 +6,22 @@ type Props = {
   children: React.ReactNode;
   confirmMessage: string;
   className?: string;
+  /** Overrides the enclosing form's action — lets several buttons share one <form>. */
+  formAction?: (formData: FormData) => void | Promise<void>;
 };
 
-export function ConfirmButton({ children, confirmMessage, className }: Props) {
+export function ConfirmButton({
+  children,
+  confirmMessage,
+  className,
+  formAction,
+}: Props) {
   const { pending } = useFormStatus();
 
   return (
     <button
       type="submit"
+      formAction={formAction}
       disabled={pending}
       className={className}
       onClick={(event) => {

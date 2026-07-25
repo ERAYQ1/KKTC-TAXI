@@ -12,7 +12,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const taxis = await getPublicTaxis();
+    // Sitemaps need every taxi, not one paginated page.
+    const { taxis } = await getPublicTaxis({ pageSize: 10000 });
     for (const taxi of taxis) {
       entries.push({
         url: `${SITE_URL}/taksi/${taxi.id}`,

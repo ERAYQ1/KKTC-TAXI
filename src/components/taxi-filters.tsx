@@ -2,6 +2,8 @@ import Form from "next/form";
 import Link from "next/link";
 import { ClockIcon, SearchIcon } from "@/components/icons";
 import { REGIONS, type Region } from "@/lib/taxi";
+import { t } from "@/lib/i18n";
+import { getLang } from "@/lib/get-lang";
 
 type Props = {
   q: string;
@@ -24,8 +26,9 @@ const chipOn = "border-brand-strong bg-brand-strong text-white";
 const chipOff =
   "border-border bg-surface text-foreground hover:border-brand-strong hover:text-brand-strong";
 
-export function TaxiFilters({ q, region, only24_7 }: Props) {
+export async function TaxiFilters({ q, region, only24_7 }: Props) {
   const only = only24_7 ? "1" : undefined;
+  const lang = await getLang();
 
   return (
     <section aria-label="Taksi arama ve filtreleme" className="space-y-4">
@@ -36,8 +39,8 @@ export function TaxiFilters({ q, region, only24_7 }: Props) {
             type="search"
             name="q"
             defaultValue={q}
-            placeholder="Taksi adı veya bölge ara"
-            aria-label="Taksi ara"
+            placeholder={t(lang, "searchPlaceholder")}
+            aria-label={t(lang, "searchPlaceholder")}
             className="h-12 w-full rounded-lg border border-border bg-surface pr-3 pl-10 text-base placeholder:text-muted-foreground"
           />
         </div>
@@ -47,7 +50,7 @@ export function TaxiFilters({ q, region, only24_7 }: Props) {
           type="submit"
           className="h-12 shrink-0 rounded-lg bg-foreground px-5 font-semibold text-background transition-opacity hover:opacity-90"
         >
-          Ara
+          {t(lang, "searchButton")}
         </button>
       </Form>
 
@@ -59,7 +62,7 @@ export function TaxiFilters({ q, region, only24_7 }: Props) {
               aria-current={!region ? "true" : undefined}
               className={`${chip} ${!region ? chipOn : chipOff}`}
             >
-              Tümü
+              {t(lang, "filterAll")}
             </Link>
           </li>
           {REGIONS.map((r) => (

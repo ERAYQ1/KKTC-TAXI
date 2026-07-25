@@ -8,5 +8,10 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    environmentOptions: {
+      // jsdom disables localStorage/sessionStorage without a real origin.
+      jsdom: { url: "http://localhost/" },
+    },
+    setupFiles: ["./vitest.setup.ts"],
   },
 });

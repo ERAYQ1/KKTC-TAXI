@@ -27,6 +27,18 @@ export default async function AdminLayout({
         </div>
         <div className="flex items-center gap-2">
           <Link
+            href="/admin/yorumlar"
+            className="inline-flex h-11 items-center rounded-lg border border-border px-3 text-sm font-medium transition-colors hover:bg-brand-soft"
+          >
+            Yorumlar
+          </Link>
+          <Link
+            href="/admin/gecmis"
+            className="inline-flex h-11 items-center rounded-lg border border-border px-3 text-sm font-medium transition-colors hover:bg-brand-soft"
+          >
+            Geçmiş
+          </Link>
+          <Link
             href="/admin/taksiler/yeni"
             className="inline-flex h-11 items-center rounded-lg bg-brand-strong px-4 text-sm font-semibold text-white transition-colors hover:brightness-110"
           >

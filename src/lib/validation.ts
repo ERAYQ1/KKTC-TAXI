@@ -121,6 +121,47 @@ async function sniffImageType(
   return null;
 }
 
+export type ReviewInput = {
+  author_name: string;
+  rating: number;
+  comment: string | null;
+};
+
+export function parseReviewForm(form: FormData): {
+  data?: ReviewInput;
+  fieldErrors?: FieldErrors;
+} {
+  const fieldErrors: FieldErrors = {};
+
+  const authorName = text(form, "author_name");
+  if (authorName.length < 2) {
+    fieldErrors.author_name = "İsim en az 2 karakter olmalı.";
+  } else if (authorName.length > 60) {
+    fieldErrors.author_name = "İsim en fazla 60 karakter olabilir.";
+  }
+
+  const ratingRaw = text(form, "rating");
+  const rating = Number(ratingRaw);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    fieldErrors.rating = "1 ile 5 arasında bir puan seçin.";
+  }
+
+  const comment = text(form, "comment");
+  if (comment.length > 500) {
+    fieldErrors.comment = "Yorum en fazla 500 karakter olabilir.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) return { fieldErrors };
+
+  return {
+    data: {
+      author_name: authorName,
+      rating,
+      comment: comment || null,
+    },
+  };
+}
+
 /** Validates an uploaded photo. Returns `null` when no file was submitted. */
 export async function validatePhoto(
   value: FormDataEntryValue | null,

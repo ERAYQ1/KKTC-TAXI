@@ -45,6 +45,12 @@ const nextConfig: NextConfig = {
     // `supabase start` serves storage from 127.0.0.1, which Next 16 blocks by
     // default. Kept strictly to development so the guard stays on in production.
     ...(isDev ? { dangerouslyAllowLocalIP: true } : {}),
+    // Only ever serves our own static placeholder asset (`/public`), never a
+    // user-controlled or remote SVG — photo uploads are restricted to
+    // JPG/PNG/WebP in `validation.ts`, so this can't become an XSS vector.
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   experimental: {
     serverActions: {

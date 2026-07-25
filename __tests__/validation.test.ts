@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { parseTaxiForm, validatePhoto } from "@/lib/validation";
+import { parseReviewForm, parseTaxiForm, validatePhoto } from "@/lib/validation";
 
 function buildForm(fields: Record<string, string>): FormData {
   const form = new FormData();
@@ -103,5 +103,56 @@ describe("validatePhoto", () => {
   test("accepts a real PNG signature declared as image/png", async () => {
     const result = await validatePhoto(pngFile());
     expect(result).toMatchObject({ ext: "png" });
+  });
+});
+
+describe("parseReviewForm", () => {
+  const validFields = {
+    author_name: "Ayşe",
+    rating: "5",
+    comment: "Harika hizmet.",
+  };
+
+  test("accepts a minimal valid review", () => {
+    const { data, fieldErrors } = parseReviewForm(buildForm(validFields));
+    expect(fieldErrors).toBeUndefined();
+    expect(data).toEqual({
+      author_name: "Ayşe",
+      rating: 5,
+      comment: "Harika hizmet.",
+    });
+  });
+
+  test("defaults comment to null when blank", () => {
+    const { data } = parseReviewForm(buildForm({ ...validFields, comment: "" }));
+    expect(data?.comment).toBeNull();
+  });
+
+  test("rejects a name shorter than 2 characters", () => {
+    const { fieldErrors } = parseReviewForm(
+      buildForm({ ...validFields, author_name: "A" }),
+    );
+    expect(fieldErrors?.author_name).toBeDefined();
+  });
+
+  test("rejects a rating outside 1-5", () => {
+    const { fieldErrors } = parseReviewForm(
+      buildForm({ ...validFields, rating: "6" }),
+    );
+    expect(fieldErrors?.rating).toBeDefined();
+  });
+
+  test("rejects a non-numeric rating", () => {
+    const { fieldErrors } = parseReviewForm(
+      buildForm({ ...validFields, rating: "abc" }),
+    );
+    expect(fieldErrors?.rating).toBeDefined();
+  });
+
+  test("rejects a comment longer than 500 characters", () => {
+    const { fieldErrors } = parseReviewForm(
+      buildForm({ ...validFields, comment: "a".repeat(501) }),
+    );
+    expect(fieldErrors?.comment).toBeDefined();
   });
 });
