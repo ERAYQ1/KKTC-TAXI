@@ -2,13 +2,14 @@
 
 import { useActionState } from "react";
 import { login, type LoginState } from "./actions";
+import { t, type Lang } from "@/lib/i18n";
 
 const initialState: LoginState = {};
 
 const field =
   "h-12 w-full rounded-lg border border-border bg-surface px-3 text-base";
 
-export function LoginForm() {
+export function LoginForm({ lang }: { lang: Lang }) {
   const [state, formAction, pending] = useActionState(login, initialState);
 
   return (
@@ -24,7 +25,7 @@ export function LoginForm() {
 
       <div>
         <label htmlFor="email" className="block text-sm font-medium">
-          E-posta <span className="text-destructive">*</span>
+          {t(lang, "adminEmailLabel")} <span className="text-destructive">*</span>
         </label>
         <input
           id="email"
@@ -38,7 +39,7 @@ export function LoginForm() {
 
       <div>
         <label htmlFor="password" className="block text-sm font-medium">
-          Şifre <span className="text-destructive">*</span>
+          {t(lang, "adminPasswordLabel")} <span className="text-destructive">*</span>
         </label>
         <input
           id="password"
@@ -55,7 +56,7 @@ export function LoginForm() {
         disabled={pending}
         className="h-12 w-full rounded-lg bg-brand-strong font-semibold text-white transition-colors hover:brightness-110 disabled:opacity-60"
       >
-        {pending ? "Giriş yapılıyor…" : "Giriş yap"}
+        {pending ? t(lang, "adminLoggingIn") : t(lang, "adminLoginSubmit")}
       </button>
     </form>
   );

@@ -1,4 +1,5 @@
 import { isRegion, normalisePhone, type Region } from "@/lib/taxi";
+import { t, type Lang } from "@/lib/i18n";
 
 export const MAX_PHOTO_BYTES = 2 * 1024 * 1024; // 2 MB
 export const ALLOWED_PHOTO_TYPES = {
@@ -14,8 +15,10 @@ export type TaxiInput = {
   phone: string;
   whatsapp: string;
   price_info: string | null;
+  price_info_en: string | null;
   region: Region;
   description: string | null;
+  description_en: string | null;
   is_24_7: boolean;
   featured: boolean;
   active: boolean;
@@ -35,7 +38,7 @@ function isValidPhone(raw: string): boolean {
   return /^90\d{10}$/.test(normalisePhone(raw));
 }
 
-export function parseTaxiForm(form: FormData): {
+export function parseTaxiForm(form: FormData, lang: Lang): {
   data?: TaxiInput;
   fieldErrors?: FieldErrors;
 } {
@@ -43,36 +46,46 @@ export function parseTaxiForm(form: FormData): {
 
   const name = text(form, "name");
   if (name.length < 2) {
-    fieldErrors.name = "İsim en az 2 karakter olmalı.";
+    fieldErrors.name = t(lang, "fieldErrNameLength");
   } else if (name.length > 80) {
-    fieldErrors.name = "İsim en fazla 80 karakter olabilir.";
+    fieldErrors.name = t(lang, "fieldErrNameMax");
   }
 
   const phone = text(form, "phone");
   if (!phone) {
-    fieldErrors.phone = "Telefon numarası zorunlu.";
+    fieldErrors.phone = t(lang, "fieldErrPhoneRequired");
   } else if (!isValidPhone(phone)) {
-    fieldErrors.phone = "Geçerli bir numara girin (örn. 0533 123 45 67).";
+    fieldErrors.phone = t(lang, "fieldErrPhoneInvalid");
   }
 
   const whatsapp = text(form, "whatsapp") || phone;
   if (!isValidPhone(whatsapp)) {
-    fieldErrors.whatsapp = "Geçerli bir WhatsApp numarası girin.";
+    fieldErrors.whatsapp = t(lang, "fieldErrWhatsappInvalid");
   }
 
   const region = text(form, "region");
   if (!isRegion(region)) {
-    fieldErrors.region = "Bölge seçin.";
+    fieldErrors.region = t(lang, "fieldErrRegionRequired");
   }
 
   const priceInfo = text(form, "price_info");
   if (priceInfo.length > 120) {
-    fieldErrors.price_info = "Fiyat bilgisi en fazla 120 karakter olabilir.";
+    fieldErrors.price_info = t(lang, "fieldErrPriceMax");
+  }
+
+  const priceInfoEn = text(form, "price_info_en");
+  if (priceInfoEn.length > 120) {
+    fieldErrors.price_info_en = t(lang, "fieldErrPriceEnMax");
   }
 
   const description = text(form, "description");
   if (description.length > 1000) {
-    fieldErrors.description = "Açıklama en fazla 1000 karakter olabilir.";
+    fieldErrors.description = t(lang, "fieldErrDescriptionMax");
+  }
+
+  const descriptionEn = text(form, "description_en");
+  if (descriptionEn.length > 1000) {
+    fieldErrors.description_en = t(lang, "fieldErrDescriptionEnMax");
   }
 
   if (Object.keys(fieldErrors).length > 0) return { fieldErrors };
@@ -83,8 +96,10 @@ export function parseTaxiForm(form: FormData): {
       phone,
       whatsapp,
       price_info: priceInfo || null,
+      price_info_en: priceInfoEn || null,
       region: region as Region,
       description: description || null,
+      description_en: descriptionEn || null,
       is_24_7: checked(form, "is_24_7"),
       featured: checked(form, "featured"),
       active: checked(form, "active"),
@@ -165,21 +180,22 @@ export function parseReviewForm(form: FormData): {
 /** Validates an uploaded photo. Returns `null` when no file was submitted. */
 export async function validatePhoto(
   value: FormDataEntryValue | null,
+  lang: Lang,
 ): Promise<{ file: File; ext: string } | { error: string } | null> {
   if (!(value instanceof File) || value.size === 0) return null;
 
   const declared =
     ALLOWED_PHOTO_TYPES[value.type as keyof typeof ALLOWED_PHOTO_TYPES];
   if (!declared) {
-    return { error: "Fotoğraf JPG, PNG veya WebP olmalı." };
+    return { error: t(lang, "errPhotoWrongType") };
   }
   if (value.size > MAX_PHOTO_BYTES) {
-    return { error: "Fotoğraf en fazla 2 MB olabilir." };
+    return { error: t(lang, "errPhotoTooLarge") };
   }
 
   const actual = await sniffImageType(value);
   if (!actual || actual !== declared) {
-    return { error: "Dosya geçerli bir JPG, PNG veya WebP görseli değil." };
+    return { error: t(lang, "errPhotoInvalidFile") };
   }
 
   return { file: value, ext: actual };

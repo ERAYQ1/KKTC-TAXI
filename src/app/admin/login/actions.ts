@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
+import { t } from "@/lib/i18n";
+import { getLang } from "@/lib/get-lang";
 
 export type LoginState = { error?: string };
 
@@ -14,11 +16,12 @@ export async function login(
   _prev: LoginState,
   form: FormData,
 ): Promise<LoginState> {
+  const lang = await getLang();
   const email = form.get("email");
   const password = form.get("password");
 
   if (typeof email !== "string" || typeof password !== "string") {
-    return { error: "E-posta ve şifre gerekli." };
+    return { error: t(lang, "errEmailPasswordRequired") };
   }
 
   const ip = await getClientIp();
@@ -28,7 +31,7 @@ export async function login(
   if (!rateLimit.allowed) {
     const retryMinutes = Math.ceil(rateLimit.retryAfterMs / 60000);
     return {
-      error: `Çok fazla deneme yapıldı. ${retryMinutes} dakika sonra tekrar deneyin.`,
+      error: t(lang, "errTooManyLoginAttemptsTemplate", { n: retryMinutes }),
     };
   }
 
@@ -41,7 +44,7 @@ export async function login(
   // Deliberately generic: never reveal whether the account exists.
   if (error) {
     await logAudit(email.trim(), "login_failed", { meta: { ip } });
-    return { error: "E-posta veya şifre hatalı." };
+    return { error: t(lang, "errInvalidCredentials") };
   }
 
   // Fixed destination — no user-controlled redirect target.

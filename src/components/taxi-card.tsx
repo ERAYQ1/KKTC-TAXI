@@ -3,12 +3,19 @@ import Link from "next/link";
 import { ContactButtons } from "@/components/contact-buttons";
 import { FavoriteButton } from "@/components/favorite-button";
 import { CarIcon, ClockIcon, MapPinIcon, StarIcon } from "@/components/icons";
-import { regionLabel, type Taxi } from "@/lib/taxi";
+import {
+  localizedDescription,
+  localizedPriceInfo,
+  regionLabel,
+  type Taxi,
+} from "@/lib/taxi";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/get-lang";
 
 export async function TaxiCard({ taxi, index }: { taxi: Taxi; index: number }) {
   const lang = await getLang();
+  const priceInfo = localizedPriceInfo(taxi, lang);
+  const description = localizedDescription(taxi, lang);
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-sm transition-shadow hover:shadow-md">
@@ -72,15 +79,15 @@ export async function TaxiCard({ taxi, index }: { taxi: Taxi; index: number }) {
             {regionLabel(taxi.region)}
           </p>
 
-          {taxi.price_info && (
+          {priceInfo && (
             <p className="mt-2 text-sm font-medium text-foreground">
-              {taxi.price_info}
+              {priceInfo}
             </p>
           )}
 
-          {taxi.description && (
+          {description && (
             <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-              {taxi.description}
+              {description}
             </p>
           )}
         </div>

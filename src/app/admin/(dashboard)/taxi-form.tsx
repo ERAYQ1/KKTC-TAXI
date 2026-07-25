@@ -7,11 +7,13 @@ import { SubmitButton } from "./confirm-button";
 import type { FormState } from "@/app/admin/actions";
 import { REGIONS, type Taxi } from "@/lib/taxi";
 import { MAX_PHOTO_BYTES } from "@/lib/validation";
+import { t, type Lang } from "@/lib/i18n";
 
 type Props = {
   action: (state: FormState, form: FormData) => Promise<FormState>;
   taxi?: Taxi;
   submitLabel: string;
+  lang: Lang;
 };
 
 const field =
@@ -31,7 +33,7 @@ function describedBy(field: string, message?: string) {
   return message ? `${field}-error` : undefined;
 }
 
-export function TaxiForm({ action, taxi, submitLabel }: Props) {
+export function TaxiForm({ action, taxi, submitLabel, lang }: Props) {
   const [state, formAction] = useActionState<FormState, FormData>(action, {});
   const errors = state.fieldErrors ?? {};
 
@@ -50,7 +52,7 @@ export function TaxiForm({ action, taxi, submitLabel }: Props) {
 
       <div>
         <label htmlFor="name" className="block text-sm font-medium">
-          Taksi / şoför adı <span className="text-destructive">*</span>
+          {t(lang, "adminFieldName")} <span className="text-destructive">*</span>
         </label>
         <input
           id="name"
@@ -68,7 +70,7 @@ export function TaxiForm({ action, taxi, submitLabel }: Props) {
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="phone" className="block text-sm font-medium">
-            Telefon <span className="text-destructive">*</span>
+            {t(lang, "adminFieldPhone")} <span className="text-destructive">*</span>
           </label>
           <input
             id="phone"
@@ -86,13 +88,13 @@ export function TaxiForm({ action, taxi, submitLabel }: Props) {
 
         <div>
           <label htmlFor="whatsapp" className="block text-sm font-medium">
-            WhatsApp
+            {t(lang, "adminFieldWhatsapp")}
           </label>
           <input
             id="whatsapp"
             name="whatsapp"
             type="tel"
-            placeholder="Boş bırakılırsa telefon kullanılır"
+            placeholder={t(lang, "adminFieldWhatsappHint")}
             defaultValue={taxi?.whatsapp}
             aria-invalid={Boolean(errors.whatsapp)}
           aria-describedby={describedBy("whatsapp", errors.whatsapp)}
@@ -104,7 +106,7 @@ export function TaxiForm({ action, taxi, submitLabel }: Props) {
 
       <div>
         <label htmlFor="region" className="block text-sm font-medium">
-          Bölge <span className="text-destructive">*</span>
+          {t(lang, "adminFieldRegion")} <span className="text-destructive">*</span>
         </label>
         <select
           id="region"
@@ -116,7 +118,7 @@ export function TaxiForm({ action, taxi, submitLabel }: Props) {
           className={field}
         >
           <option value="" disabled>
-            Bölge seçin
+            {t(lang, "adminFieldRegionPlaceholder")}
           </option>
           {REGIONS.map((r) => (
             <option key={r.value} value={r.value}>
@@ -127,26 +129,45 @@ export function TaxiForm({ action, taxi, submitLabel }: Props) {
         <FieldError id="region-error" message={errors.region} />
       </div>
 
-      <div>
-        <label htmlFor="price_info" className="block text-sm font-medium">
-          Fiyat bilgisi
-        </label>
-        <input
-          id="price_info"
-          name="price_info"
-          maxLength={120}
-          placeholder="Örn. Şehir içi 150 TL, havalimanı 600 TL"
-          defaultValue={taxi?.price_info ?? ""}
-          aria-invalid={Boolean(errors.price_info)}
-          aria-describedby={describedBy("price_info", errors.price_info)}
-          className={field}
-        />
-        <FieldError id="price_info-error" message={errors.price_info} />
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label htmlFor="price_info" className="block text-sm font-medium">
+            {t(lang, "adminFieldPriceTr")}
+          </label>
+          <input
+            id="price_info"
+            name="price_info"
+            maxLength={120}
+            placeholder={t(lang, "adminFieldPricePlaceholder")}
+            defaultValue={taxi?.price_info ?? ""}
+            aria-invalid={Boolean(errors.price_info)}
+            aria-describedby={describedBy("price_info", errors.price_info)}
+            className={field}
+          />
+          <FieldError id="price_info-error" message={errors.price_info} />
+        </div>
+
+        <div>
+          <label htmlFor="price_info_en" className="block text-sm font-medium">
+            {t(lang, "adminFieldPriceEn")}
+          </label>
+          <input
+            id="price_info_en"
+            name="price_info_en"
+            maxLength={120}
+            placeholder={t(lang, "adminFieldPriceEnHint")}
+            defaultValue={taxi?.price_info_en ?? ""}
+            aria-invalid={Boolean(errors.price_info_en)}
+            aria-describedby={describedBy("price_info_en", errors.price_info_en)}
+            className={field}
+          />
+          <FieldError id="price_info_en-error" message={errors.price_info_en} />
+        </div>
       </div>
 
       <div>
         <label htmlFor="description" className="block text-sm font-medium">
-          Açıklama
+          {t(lang, "adminFieldDescriptionTr")}
         </label>
         <textarea
           id="description"
@@ -162,14 +183,32 @@ export function TaxiForm({ action, taxi, submitLabel }: Props) {
       </div>
 
       <div>
+        <label htmlFor="description_en" className="block text-sm font-medium">
+          {t(lang, "adminFieldDescriptionEn")}
+        </label>
+        <textarea
+          id="description_en"
+          name="description_en"
+          rows={4}
+          maxLength={1000}
+          placeholder={t(lang, "adminFieldPriceEnHint")}
+          defaultValue={taxi?.description_en ?? ""}
+          aria-invalid={Boolean(errors.description_en)}
+          aria-describedby={describedBy("description_en", errors.description_en)}
+          className="mt-1.5 w-full rounded-lg border border-border bg-surface p-3 text-base"
+        />
+        <FieldError id="description_en-error" message={errors.description_en} />
+      </div>
+
+      <div>
         <label htmlFor="photo" className="block text-sm font-medium">
-          Fotoğraf
+          {t(lang, "adminFieldPhoto")}
         </label>
         {taxi?.photo_url && (
           <div className="relative mt-2 aspect-16/10 w-40 overflow-hidden rounded-lg border border-border">
             <Image
               src={taxi.photo_url}
-              alt="Mevcut fotoğraf"
+              alt={t(lang, "adminFieldPhotoCurrentAlt")}
               fill
               sizes="160px"
               className="object-cover"
@@ -185,13 +224,13 @@ export function TaxiForm({ action, taxi, submitLabel }: Props) {
           className="mt-2 w-full text-sm"
         />
         <p id="photo-help" className="mt-1 text-xs text-muted-foreground">
-          JPG, PNG veya WebP · en fazla {MAX_PHOTO_BYTES / (1024 * 1024)} MB
-          {taxi?.photo_url && " · yeni dosya seçmezseniz mevcut fotoğraf kalır"}
+          {t(lang, "adminPhotoFormatsHint", { mb: MAX_PHOTO_BYTES / (1024 * 1024) })}
+          {taxi?.photo_url && ` · ${t(lang, "adminFieldPhotoHintKeep")}`}
         </p>
       </div>
 
       <fieldset className="space-y-3 rounded-lg border border-border p-4">
-        <legend className="px-1 text-sm font-medium">Ayarlar</legend>
+        <legend className="px-1 text-sm font-medium">{t(lang, "adminFieldSettings")}</legend>
 
         <label className="flex items-center gap-3 text-sm">
           <input
@@ -200,7 +239,7 @@ export function TaxiForm({ action, taxi, submitLabel }: Props) {
             defaultChecked={taxi ? taxi.active : true}
             className="size-5 accent-[var(--brand-strong)]"
           />
-          Sitede yayında
+          {t(lang, "adminFieldPublished")}
         </label>
 
         <label className="flex items-center gap-3 text-sm">
@@ -210,7 +249,7 @@ export function TaxiForm({ action, taxi, submitLabel }: Props) {
             defaultChecked={taxi?.is_24_7 ?? false}
             className="size-5 accent-[var(--brand-strong)]"
           />
-          7/24 hizmet veriyor
+          {t(lang, "adminField24_7")}
         </label>
 
         <label className="flex items-center gap-3 text-sm">
@@ -220,13 +259,13 @@ export function TaxiForm({ action, taxi, submitLabel }: Props) {
             defaultChecked={taxi?.featured ?? false}
             className="size-5 accent-[var(--brand-strong)]"
           />
-          Öne çıkar (listede üstte gösterilir)
+          {t(lang, "adminFieldFeatured")}
         </label>
       </fieldset>
 
       <div className="flex items-center gap-3">
         <SubmitButton
-          pendingLabel="Kaydediliyor…"
+          pendingLabel={t(lang, "adminSaving")}
           className="h-12 rounded-lg bg-brand-strong px-6 font-semibold text-white transition-colors hover:brightness-110 disabled:opacity-60"
         >
           {submitLabel}
@@ -235,7 +274,7 @@ export function TaxiForm({ action, taxi, submitLabel }: Props) {
           href="/admin"
           className="inline-flex h-12 items-center rounded-lg border border-border px-5 font-medium transition-colors hover:bg-brand-soft"
         >
-          Vazgeç
+          {t(lang, "adminCancel")}
         </Link>
       </div>
     </form>

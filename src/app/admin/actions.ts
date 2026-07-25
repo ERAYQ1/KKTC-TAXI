@@ -7,16 +7,18 @@ import { createClient } from "@/lib/supabase/server";
 import { parseTaxiForm, validatePhoto, type FieldErrors } from "@/lib/validation";
 import { logAudit } from "@/lib/audit";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { t, type Lang } from "@/lib/i18n";
+import { getLang } from "@/lib/get-lang";
 
 const BUCKET = "taxi-photos";
 
 /** Guards against a runaway script/misbehaving client, not normal admin use. */
 const WRITE_LIMIT = { limit: 30, windowMs: 60 * 1000 };
 
-function assertNotRateLimited(email: string) {
+async function assertNotRateLimited(email: string) {
   const result = checkRateLimit(`admin-write:${email}`, WRITE_LIMIT);
   if (!result.allowed) {
-    throw new Error("Çok fazla işlem yapıldı. Biraz sonra tekrar deneyin.");
+    throw new Error(t(await getLang(), "errTooManyWrites"));
   }
 }
 
@@ -47,8 +49,9 @@ function revalidateTaxi(id?: string) {
 
 async function uploadPhoto(
   form: FormData,
+  lang: Lang,
 ): Promise<{ url?: string; error?: string }> {
-  const photo = await validatePhoto(form.get("photo"));
+  const photo = await validatePhoto(form.get("photo"), lang);
   if (!photo) return {};
   if ("error" in photo) return { error: photo.error };
 
@@ -63,7 +66,7 @@ async function uploadPhoto(
       upsert: false,
     });
 
-  if (error) return { error: "Fotoğraf yüklenemedi. Tekrar deneyin." };
+  if (error) return { error: t(lang, "errPhotoUploadFailed") };
 
   const {
     data: { publicUrl },
@@ -83,12 +86,13 @@ export async function createTaxi(
   form: FormData,
 ): Promise<FormState> {
   const user = await requireAdmin();
-  assertNotRateLimited(user.email ?? user.id);
+  await assertNotRateLimited(user.email ?? user.id);
+  const lang = await getLang();
 
-  const parsed = parseTaxiForm(form);
+  const parsed = parseTaxiForm(form, lang);
   if (!parsed.data) return { fieldErrors: parsed.fieldErrors };
 
-  const photo = await uploadPhoto(form);
+  const photo = await uploadPhoto(form, lang);
   if (photo.error) return { error: photo.error };
 
   const supabase = await createClient();
@@ -100,7 +104,7 @@ export async function createTaxi(
 
   if (error) {
     await removePhoto(photo.url ?? null);
-    return { error: "Taksi kaydedilemedi. Tekrar deneyin." };
+    return { error: t(lang, "errTaxiCreateFailed") };
   }
 
   await logAudit(user.email ?? user.id, "create_taxi", {
@@ -117,12 +121,13 @@ export async function updateTaxi(
   form: FormData,
 ): Promise<FormState> {
   const user = await requireAdmin();
-  assertNotRateLimited(user.email ?? user.id);
+  await assertNotRateLimited(user.email ?? user.id);
+  const lang = await getLang();
 
   const id = form.get("id");
-  if (typeof id !== "string" || !id) return { error: "Geçersiz kayıt." };
+  if (typeof id !== "string" || !id) return { error: t(lang, "errInvalidRecord") };
 
-  const parsed = parseTaxiForm(form);
+  const parsed = parseTaxiForm(form, lang);
   if (!parsed.data) return { fieldErrors: parsed.fieldErrors };
 
   const supabase = await createClient();
@@ -132,7 +137,7 @@ export async function updateTaxi(
     .eq("id", id)
     .maybeSingle();
 
-  const photo = await uploadPhoto(form);
+  const photo = await uploadPhoto(form, lang);
   if (photo.error) return { error: photo.error };
 
   const { error } = await supabase
@@ -145,7 +150,7 @@ export async function updateTaxi(
 
   if (error) {
     await removePhoto(photo.url ?? null);
-    return { error: "Taksi güncellenemedi. Tekrar deneyin." };
+    return { error: t(lang, "errTaxiUpdateFailed") };
   }
 
   // Replaced photo is only dropped once the row points at the new one.
@@ -161,7 +166,7 @@ export async function updateTaxi(
 
 export async function toggleTaxiActive(id: string, active: boolean) {
   const user = await requireAdmin();
-  assertNotRateLimited(user.email ?? user.id);
+  await assertNotRateLimited(user.email ?? user.id);
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -169,7 +174,7 @@ export async function toggleTaxiActive(id: string, active: boolean) {
     .update({ active })
     .eq("id", id);
 
-  if (error) throw new Error("Durum güncellenemedi.");
+  if (error) throw new Error(t(await getLang(), "errStatusUpdateFailed"));
 
   await logAudit(user.email ?? user.id, active ? "activate_taxi" : "deactivate_taxi", {
     taxiId: id,
@@ -180,7 +185,7 @@ export async function toggleTaxiActive(id: string, active: boolean) {
 
 export async function deleteTaxi(id: string) {
   const user = await requireAdmin();
-  assertNotRateLimited(user.email ?? user.id);
+  await assertNotRateLimited(user.email ?? user.id);
 
   const supabase = await createClient();
   const { data: existing } = await supabase
@@ -190,7 +195,7 @@ export async function deleteTaxi(id: string) {
     .maybeSingle();
 
   const { error } = await supabase.from("taxis").delete().eq("id", id);
-  if (error) throw new Error("Taksi silinemedi.");
+  if (error) throw new Error(t(await getLang(), "errTaxiDeleteFailed"));
 
   await removePhoto((existing?.photo_url as string | null) ?? null);
   await logAudit(user.email ?? user.id, "delete_taxi", { taxiId: id });
@@ -199,7 +204,7 @@ export async function deleteTaxi(id: string) {
 
 export async function bulkSetActive(active: boolean, formData: FormData) {
   const user = await requireAdmin();
-  assertNotRateLimited(user.email ?? user.id);
+  await assertNotRateLimited(user.email ?? user.id);
 
   const ids = idsFrom(formData);
   if (ids.length === 0) return;
@@ -210,7 +215,7 @@ export async function bulkSetActive(active: boolean, formData: FormData) {
     .update({ active })
     .in("id", ids);
 
-  if (error) throw new Error("Toplu güncelleme başarısız.");
+  if (error) throw new Error(t(await getLang(), "errBulkUpdateFailed"));
 
   await logAudit(user.email ?? user.id, active ? "bulk_activate" : "bulk_deactivate", {
     meta: { ids },
@@ -222,7 +227,7 @@ export async function bulkSetActive(active: boolean, formData: FormData) {
 
 export async function bulkDelete(formData: FormData) {
   const user = await requireAdmin();
-  assertNotRateLimited(user.email ?? user.id);
+  await assertNotRateLimited(user.email ?? user.id);
 
   const ids = idsFrom(formData);
   if (ids.length === 0) return;
@@ -234,7 +239,7 @@ export async function bulkDelete(formData: FormData) {
     .in("id", ids);
 
   const { error } = await supabase.from("taxis").delete().in("id", ids);
-  if (error) throw new Error("Toplu silme başarısız.");
+  if (error) throw new Error(t(await getLang(), "errBulkDeleteFailed"));
 
   for (const row of existing ?? []) {
     await removePhoto((row.photo_url as string | null) ?? null);

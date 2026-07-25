@@ -20,7 +20,7 @@ const validFields = {
 
 describe("parseTaxiForm", () => {
   test("accepts a minimal valid form and defaults whatsapp to phone", () => {
-    const { data, fieldErrors } = parseTaxiForm(buildForm(validFields));
+    const { data, fieldErrors } = parseTaxiForm(buildForm(validFields), "tr");
     expect(fieldErrors).toBeUndefined();
     expect(data).toMatchObject({
       name: "Girne Taksi",
@@ -35,6 +35,7 @@ describe("parseTaxiForm", () => {
   test("rejects a name shorter than 2 characters", () => {
     const { data, fieldErrors } = parseTaxiForm(
       buildForm({ ...validFields, name: "A" }),
+      "tr",
     );
     expect(data).toBeUndefined();
     expect(fieldErrors?.name).toBeDefined();
@@ -43,6 +44,7 @@ describe("parseTaxiForm", () => {
   test("rejects a missing phone number", () => {
     const { fieldErrors } = parseTaxiForm(
       buildForm({ ...validFields, phone: "" }),
+      "tr",
     );
     expect(fieldErrors?.phone).toBeDefined();
   });
@@ -50,6 +52,7 @@ describe("parseTaxiForm", () => {
   test("rejects an invalid phone number", () => {
     const { fieldErrors } = parseTaxiForm(
       buildForm({ ...validFields, phone: "123" }),
+      "tr",
     );
     expect(fieldErrors?.phone).toBeDefined();
   });
@@ -57,6 +60,7 @@ describe("parseTaxiForm", () => {
   test("rejects an unknown region", () => {
     const { fieldErrors } = parseTaxiForm(
       buildForm({ ...validFields, region: "istanbul" }),
+      "tr",
     );
     expect(fieldErrors?.region).toBeDefined();
   });
@@ -65,7 +69,7 @@ describe("parseTaxiForm", () => {
     const form = buildForm(validFields);
     form.set("is_24_7", "on");
     form.set("featured", "true");
-    const { data } = parseTaxiForm(form);
+    const { data } = parseTaxiForm(form, "tr");
     expect(data?.is_24_7).toBe(true);
     expect(data?.featured).toBe(true);
     expect(data?.active).toBe(false);
@@ -81,14 +85,14 @@ function pngFile(bytes: number[] = [0, 0, 0, 0], type = "image/png"): File {
 
 describe("validatePhoto", () => {
   test("returns null when no file was submitted", async () => {
-    expect(await validatePhoto(null)).toBeNull();
+    expect(await validatePhoto(null, "tr")).toBeNull();
   });
 
   test("rejects a declared MIME type outside the allow-list", async () => {
     const file = new File([new Uint8Array([1, 2, 3])], "photo.gif", {
       type: "image/gif",
     });
-    const result = await validatePhoto(file);
+    const result = await validatePhoto(file, "tr");
     expect(result).toMatchObject({ error: expect.any(String) });
   });
 
@@ -96,12 +100,12 @@ describe("validatePhoto", () => {
     const fakePng = new File([new Uint8Array([1, 2, 3, 4])], "fake.png", {
       type: "image/png",
     });
-    const result = await validatePhoto(fakePng);
+    const result = await validatePhoto(fakePng, "tr");
     expect(result).toMatchObject({ error: expect.any(String) });
   });
 
   test("accepts a real PNG signature declared as image/png", async () => {
-    const result = await validatePhoto(pngFile());
+    const result = await validatePhoto(pngFile(), "tr");
     expect(result).toMatchObject({ ext: "png" });
   });
 });

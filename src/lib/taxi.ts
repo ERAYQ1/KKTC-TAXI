@@ -1,3 +1,5 @@
+import type { Lang } from "@/lib/i18n";
+
 export const REGIONS = [
   { value: "lefkosa", label: "Lefkoşa" },
   { value: "girne", label: "Girne" },
@@ -29,14 +31,27 @@ export type Taxi = {
   whatsapp: string;
   photo_url: string | null;
   price_info: string | null;
+  price_info_en: string | null;
   region: Region;
   description: string | null;
+  description_en: string | null;
   is_24_7: boolean;
   featured: boolean;
   active: boolean;
   created_at: string;
   updated_at: string;
 };
+
+/** English content falls back to the Turkish column when the admin left it empty. */
+export function localizedDescription(taxi: Taxi, lang: Lang): string | null {
+  if (lang === "en") return taxi.description_en || taxi.description;
+  return taxi.description;
+}
+
+export function localizedPriceInfo(taxi: Taxi, lang: Lang): string | null {
+  if (lang === "en") return taxi.price_info_en || taxi.price_info;
+  return taxi.price_info;
+}
 
 export const WHATSAPP_MESSAGE = "Merhaba, KKTC Taksi'den geldim.";
 

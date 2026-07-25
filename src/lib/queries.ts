@@ -36,7 +36,7 @@ export async function getPublicTaxis(
   if (filters.only24_7) countQuery = countQuery.eq("is_24_7", true);
   if (searchTerm) {
     countQuery = countQuery.or(
-      `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,price_info.ilike.%${searchTerm}%`,
+      `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,description_en.ilike.%${searchTerm}%,price_info.ilike.%${searchTerm}%,price_info_en.ilike.%${searchTerm}%`,
     );
   }
   const { count, error: countError } = await countQuery;
@@ -60,7 +60,7 @@ export async function getPublicTaxis(
   if (filters.only24_7) dataQuery = dataQuery.eq("is_24_7", true);
   if (searchTerm) {
     dataQuery = dataQuery.or(
-      `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,price_info.ilike.%${searchTerm}%`,
+      `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,description_en.ilike.%${searchTerm}%,price_info.ilike.%${searchTerm}%,price_info_en.ilike.%${searchTerm}%`,
     );
   }
 

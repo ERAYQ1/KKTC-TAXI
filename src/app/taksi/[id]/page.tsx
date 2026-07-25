@@ -14,7 +14,12 @@ import {
   StarIcon,
 } from "@/components/icons";
 import { getPublicTaxi } from "@/lib/queries";
-import { formatPhone, regionLabel } from "@/lib/taxi";
+import {
+  formatPhone,
+  localizedDescription,
+  localizedPriceInfo,
+  regionLabel,
+} from "@/lib/taxi";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/get-lang";
 import { averageRating, getApprovedReviews } from "@/lib/reviews";
@@ -23,7 +28,7 @@ type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const taxi = await getPublicTaxi(id);
+  const [taxi, lang] = await Promise.all([getPublicTaxi(id), getLang()]);
 
   if (!taxi) {
     return { title: "Taksi bulunamadı" };
@@ -34,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // The root layout template appends "| KKTC Taksi".
     title: `${taxi.name} — ${region} Taksi`,
     description:
-      taxi.description?.slice(0, 155) ||
+      localizedDescription(taxi, lang)?.slice(0, 155) ||
       `${region} bölgesinde ${taxi.name}. Tek dokunuşla arayın veya WhatsApp'tan yazın.`,
     alternates: { canonical: `/taksi/${taxi.id}` },
   };
@@ -48,6 +53,8 @@ export default async function TaxiDetailPage({ params }: Props) {
 
   const reviews = await getApprovedReviews(taxi.id);
   const avgRating = averageRating(reviews);
+  const priceInfo = localizedPriceInfo(taxi, lang);
+  const description = localizedDescription(taxi, lang);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 pb-28 sm:py-10 sm:pb-10">
@@ -121,17 +128,17 @@ export default async function TaxiDetailPage({ params }: Props) {
               <PhoneIcon className="size-4 shrink-0 text-muted-foreground" />
               <dd>{formatPhone(taxi.phone)}</dd>
             </div>
-            {taxi.price_info && (
+            {priceInfo && (
               <div className="flex items-baseline gap-2">
                 <dt className="text-muted-foreground">{t(lang, "priceLabel")}</dt>
-                <dd className="font-medium">{taxi.price_info}</dd>
+                <dd className="font-medium">{priceInfo}</dd>
               </div>
             )}
           </dl>
 
-          {taxi.description && (
+          {description && (
             <p className="mt-4 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
-              {taxi.description}
+              {description}
             </p>
           )}
 

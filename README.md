@@ -12,7 +12,7 @@ KKTC genelinde taksi bulma platformu. Ziyaretçiler taksileri bölgeye göre ara
 
 - Bölge/arama filtreli genel taksi listesi, sayfalama (12/sayfa)
 - Taksi detayında yorumlar (ziyaretçi gönderir, admin onaylar) ve favoriler (tarayıcıda, `localStorage`)
-- TR/EN dil seçici (statik arayüz metinleri; taksi içerikleri veritabanında girildiği dilde kalır)
+- TR/EN dil seçici; arayüz metinleri (admin panel dahil) çift dilli. Taksi açıklaması ve fiyat bilgisi için ayrı EN alanı var — boş bırakılırsa TR metne düşer (bölge adları ve taksi/şoför adı tek dil kalır)
 - Admin panelinde istatistik özeti, toplu aktif/pasif/sil işlemleri, yorum moderasyonu, işlem geçmişi (audit log)
 - Giriş ve admin yazma işlemlerinde bellek-içi rate limiting (`src/lib/rate-limit.ts`, tek instance için — çoklu instance'ta paylaşılmaz)
 - Kod-üretimli OG görseli, favicon ve PWA manifest'i (`next/og`, harici asset gerekmez)

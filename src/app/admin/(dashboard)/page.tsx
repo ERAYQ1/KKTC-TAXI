@@ -10,9 +10,11 @@ import { ConfirmButton } from "./confirm-button";
 import { CarIcon } from "@/components/icons";
 import { getAllTaxis } from "@/lib/queries";
 import { formatPhone, REGIONS, regionLabel } from "@/lib/taxi";
+import { t } from "@/lib/i18n";
+import { getLang } from "@/lib/get-lang";
 
 export default async function AdminDashboardPage() {
-  const taxis = await getAllTaxis();
+  const [taxis, lang] = await Promise.all([getAllTaxis(), getLang()]);
   const activeCount = taxis.filter((t) => t.active).length;
   const featuredCount = taxis.filter((t) => t.featured).length;
   const byRegion = REGIONS.map((r) => ({
@@ -23,33 +25,33 @@ export default async function AdminDashboardPage() {
   return (
     <div className="py-6">
       <div className="flex items-baseline justify-between gap-4">
-        <h1 className="font-display text-xl font-semibold">Taksiler</h1>
+        <h1 className="font-display text-xl font-semibold">{t(lang, "adminDashboardHeading")}</h1>
         <p className="text-sm text-muted-foreground">
-          {activeCount} aktif / {taxis.length} toplam
+          {t(lang, "adminActiveOfTotalTemplate", { active: activeCount, total: taxis.length })}
         </p>
       </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-border bg-surface p-4">
-          <dt className="text-xs text-muted-foreground">Toplam</dt>
+          <dt className="text-xs text-muted-foreground">{t(lang, "adminStatTotal")}</dt>
           <dd className="mt-1 font-display text-2xl font-semibold">
             {taxis.length}
           </dd>
         </div>
         <div className="rounded-xl border border-border bg-surface p-4">
-          <dt className="text-xs text-muted-foreground">Aktif</dt>
+          <dt className="text-xs text-muted-foreground">{t(lang, "adminStatActive")}</dt>
           <dd className="mt-1 font-display text-2xl font-semibold text-whatsapp">
             {activeCount}
           </dd>
         </div>
         <div className="rounded-xl border border-border bg-surface p-4">
-          <dt className="text-xs text-muted-foreground">Pasif</dt>
+          <dt className="text-xs text-muted-foreground">{t(lang, "adminStatInactive")}</dt>
           <dd className="mt-1 font-display text-2xl font-semibold">
             {taxis.length - activeCount}
           </dd>
         </div>
         <div className="rounded-xl border border-border bg-surface p-4">
-          <dt className="text-xs text-muted-foreground">Öne çıkan</dt>
+          <dt className="text-xs text-muted-foreground">{t(lang, "adminStatFeatured")}</dt>
           <dd className="mt-1 font-display text-2xl font-semibold text-brand-strong">
             {featuredCount}
           </dd>
@@ -74,41 +76,41 @@ export default async function AdminDashboardPage() {
         <div className="mt-6 rounded-xl border border-dashed border-border bg-brand-soft px-6 py-14 text-center">
           <CarIcon className="mx-auto size-10 text-brand" />
           <p className="mt-4 font-display text-lg font-semibold">
-            Henüz taksi eklenmedi
+            {t(lang, "adminEmptyTitle")}
           </p>
           <Link
             href="/admin/taksiler/yeni"
             className="mt-4 inline-flex h-11 items-center rounded-lg bg-brand-strong px-5 text-sm font-semibold text-white"
           >
-            İlk taksiyi ekle
+            {t(lang, "adminEmptyCta")}
           </Link>
         </div>
       ) : (
         <form>
           <div className="mt-6 flex flex-wrap items-center gap-2 border-b border-border pb-3">
             <span className="text-sm text-muted-foreground">
-              Seçilenler:
+              {t(lang, "adminSelected")}
             </span>
             <ConfirmButton
-              confirmMessage="Seçili taksiler aktif edilsin mi?"
+              confirmMessage={t(lang, "adminConfirmBulkActivate")}
               formAction={bulkSetActive.bind(null, true)}
               className="h-9 rounded-lg border border-border px-3 text-sm font-medium transition-colors hover:bg-brand-soft"
             >
-              Aktif et
+              {t(lang, "adminBulkActivate")}
             </ConfirmButton>
             <ConfirmButton
-              confirmMessage="Seçili taksiler pasife alınsın mı?"
+              confirmMessage={t(lang, "adminConfirmBulkDeactivate")}
               formAction={bulkSetActive.bind(null, false)}
               className="h-9 rounded-lg border border-border px-3 text-sm font-medium transition-colors hover:bg-brand-soft"
             >
-              Pasife al
+              {t(lang, "adminBulkDeactivate")}
             </ConfirmButton>
             <ConfirmButton
-              confirmMessage="Seçili taksiler kalıcı olarak silinsin mi? Bu işlem geri alınamaz."
+              confirmMessage={t(lang, "adminConfirmBulkDelete")}
               formAction={bulkDelete}
               className="h-9 rounded-lg border border-destructive/40 px-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
             >
-              Sil
+              {t(lang, "adminBulkDelete")}
             </ConfirmButton>
           </div>
 
@@ -122,7 +124,7 @@ export default async function AdminDashboardPage() {
                   type="checkbox"
                   name="ids"
                   value={taxi.id}
-                  aria-label={`${taxi.name} seç`}
+                  aria-label={t(lang, "adminSelectAriaTemplate", { name: taxi.name })}
                   className="size-5 shrink-0 accent-[var(--brand-strong)]"
                 />
 
@@ -147,7 +149,7 @@ export default async function AdminDashboardPage() {
                     {taxi.name}
                     {taxi.featured && (
                       <span className="ml-2 align-middle text-xs font-semibold text-brand-strong">
-                        ★ öne çıkan
+                        ★ {t(lang, "adminFeaturedBadge")}
                       </span>
                     )}
                   </p>
@@ -164,7 +166,7 @@ export default async function AdminDashboardPage() {
                       : "bg-foreground/15 text-foreground"
                   }`}
                 >
-                  {taxi.active ? "Aktif" : "Pasif"}
+                  {taxi.active ? t(lang, "adminStatActive") : t(lang, "adminStatInactive")}
                 </span>
 
                 <div className="flex items-center gap-2">
@@ -172,27 +174,27 @@ export default async function AdminDashboardPage() {
                     href={`/admin/taksiler/${taxi.id}/duzenle`}
                     className="inline-flex h-11 items-center rounded-lg border border-border px-3 text-sm font-medium transition-colors hover:bg-brand-soft"
                   >
-                    Düzenle
+                    {t(lang, "adminEdit")}
                   </Link>
 
                   <ConfirmButton
                     confirmMessage={
                       taxi.active
-                        ? `"${taxi.name}" pasife alınsın mı? Sitede görünmeyecek.`
-                        : `"${taxi.name}" aktif edilsin mi?`
+                        ? t(lang, "adminConfirmDeactivateOneTemplate", { name: taxi.name })
+                        : t(lang, "adminConfirmActivateOneTemplate", { name: taxi.name })
                     }
                     formAction={toggleTaxiActive.bind(null, taxi.id, !taxi.active)}
                     className="h-11 rounded-lg border border-border px-3 text-sm font-medium transition-colors hover:bg-brand-soft"
                   >
-                    {taxi.active ? "Pasife al" : "Aktif et"}
+                    {taxi.active ? t(lang, "adminBulkDeactivate") : t(lang, "adminBulkActivate")}
                   </ConfirmButton>
 
                   <ConfirmButton
-                    confirmMessage={`"${taxi.name}" kalıcı olarak silinsin mi? Bu işlem geri alınamaz.`}
+                    confirmMessage={t(lang, "adminConfirmDeleteOneTemplate", { name: taxi.name })}
                     formAction={deleteTaxi.bind(null, taxi.id)}
                     className="h-11 rounded-lg border border-destructive/40 px-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
                   >
-                    Sil
+                    {t(lang, "adminBulkDelete")}
                   </ConfirmButton>
                 </div>
               </li>
