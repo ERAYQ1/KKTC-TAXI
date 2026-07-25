@@ -51,6 +51,8 @@ npm run dev
 | `npm run build` | Production build |
 | `npm run lint` | ESLint |
 | `npx tsc --noEmit` | Tip kontrolü |
+| `npm run test` | Vitest (unit testler) |
+| `npm run test:watch` | Vitest, izleme modunda |
 
 ## Yapı
 
