@@ -1,43 +1,78 @@
 @import "tailwindcss";
 
+/*
+ * Palette from design-system/kktc-taksi/MASTER.md, adjusted for WCAG AA:
+ * brand #EA580C on white is only 3.56:1, so interactive surfaces and small
+ * text use brand-strong #C2410C (5.18:1). WhatsApp green #25D366 is 2.1:1,
+ * so the button uses the dark brand green #075E54 (~7:1).
+ */
 :root {
   --background: #fff7ed;
+  --surface: #ffffff;
   --foreground: #0f172a;
-  --color-primary: #ea580c;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f97316;
-  --color-accent: #2563eb;
-  --color-muted: #fdf4f0;
-  --color-border: #fceae1;
-  --color-destructive: #dc2626;
-  --color-ring: #ea580c;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-primary: var(--color-primary);
-  --color-primary-foreground: var(--color-primary-foreground);
-  --color-secondary: var(--color-secondary);
-  --color-accent: var(--color-accent);
-  --color-muted: var(--color-muted);
-  --color-border: var(--color-border);
-  --color-destructive: var(--color-destructive);
-  --color-ring: var(--color-ring);
-  --font-sans: var(--font-body);
-  --font-display: var(--font-display);
+  --muted-foreground: #52525b;
+  --brand: #ea580c;
+  --brand-strong: #c2410c;
+  --brand-soft: #fdf4f0;
+  --accent: #2563eb;
+  --whatsapp: #075e54;
+  --border: #f3d9cc;
+  --destructive: #b91c1c;
+  --ring: #c2410c;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f172a;
+    --background: #0b1220;
+    --surface: #111c31;
     --foreground: #f8fafc;
-    --color-muted: #1e293b;
-    --color-border: #334155;
+    --muted-foreground: #a1adc4;
+    --brand: #fb923c;
+    --brand-strong: #fb923c;
+    --brand-soft: #1b263c;
+    --accent: #60a5fa;
+    --whatsapp: #25d366;
+    --border: #2a3652;
+    --destructive: #f87171;
+    --ring: #fb923c;
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --color-whatsapp: var(--whatsapp);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* Visible, consistent keyboard focus everywhere. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

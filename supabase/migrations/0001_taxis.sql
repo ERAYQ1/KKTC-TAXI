@@ -26,9 +26,14 @@ create table if not exists taxis (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists taxis_region_idx on taxis (region);
-create index if not exists taxis_active_idx on taxis (active);
-create index if not exists taxis_featured_idx on taxis (featured);
+-- Matches the public listing filter (active, then optional region / is_24_7).
+-- A leftmost-prefix scan also covers the plain `active = true` case, so no
+-- separate single-column indexes are needed.
+create index if not exists taxis_public_filter_idx
+  on taxis (active, region, is_24_7);
+
+-- Admin listing orders by newest first.
+create index if not exists taxis_created_at_idx on taxis (created_at desc);
 
 -- keep updated_at fresh on every update
 create or replace function set_updated_at()
@@ -44,6 +49,15 @@ create trigger taxis_set_updated_at
   before update on taxis
   for each row
   execute function set_updated_at();
+
+-- Table-level privileges. RLS filters *rows*, but the role still needs the
+-- underlying grant, otherwise PostgREST returns 42501 permission denied.
+grant usage on schema public to anon, authenticated, service_role;
+grant select on table taxis to anon;
+grant select, insert, update, delete on table taxis to authenticated;
+-- service_role bypasses RLS by design and is server-only; it is what admin
+-- tooling, migrations and backups use.
+grant all on table taxis to service_role;
 
 -- RLS: public can only read active rows; only authenticated (admin) can write
 alter table taxis enable row level security;

@@ -1,6 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+/**
+ * Refreshes the Supabase session cookie and performs an *optimistic* redirect
+ * for unauthenticated admin traffic. Real authorisation happens in
+ * `requireAdmin()` on every admin page and Server Action.
+ */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -29,12 +34,20 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
-  const isLoginRoute = request.nextUrl.pathname.startsWith("/admin/login");
+  const { pathname } = request.nextUrl;
+  const isLoginRoute = pathname === "/admin/login";
 
-  if (isAdminRoute && !isLoginRoute && !user) {
+  if (!user && !isLoginRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+
+  if (user && isLoginRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/admin";
+    url.search = "";
     return NextResponse.redirect(url);
   }
 
